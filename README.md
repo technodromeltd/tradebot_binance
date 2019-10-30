@@ -8,17 +8,16 @@ Can only trade between two assets using limit bids, where the sell price need to
 so in theory cant lose all of your money by mistakenly selling too low :)
 
 You need to set up binance api account first and add your key and secret to binance_api_keys.py file e.g.
+    #/binance_api_keys.py
+    
+    api_key = 'YOURKEY'
+    secret_key = 'YOURSECRET'
+
 How to create apikey https://www.binance.com/en/support/articles/360002502072
-
-># /binance_api_keys.py
-># for storing API key and secret
->
->api_key = 'YOURKEY'
->secret_key = 'YOURSECRET'
-
 
 Dependeciens:
 - python-binance https://python-binance.readthedocs.io/en/latest/overview.html
+- pandas
 
 Usage:
 >main.py  < COINPAIR > < UPDATE_INTERVAL_S >
