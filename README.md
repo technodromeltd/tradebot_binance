@@ -7,15 +7,15 @@ Trading bot using Binance API to make real trades based on Bollinger bands analy
 Can only trade between two assets using limit bids, where the sell price need to be higher than current price,  
 so in theory cant lose all of your money by mistakenly selling too low :)
 
-*You need to set up binance api account first and add your key and secret to binance_api_keys.py file e.g.*
+You need to set up binance api account first and add your key and secret to binance_api_keys.py file e.g.
 How to create apikey https://www.binance.com/en/support/articles/360002502072
---------------------------------
-# /binance_api_keys.py
-# for storing API key and secret
 
-api_key = 'YOURKEY'
-secret_key = 'YOURSECRET'
----------------------------------
+># /binance_api_keys.py
+># for storing API key and secret
+>
+>api_key = 'YOURKEY'
+>secret_key = 'YOURSECRET'
+
 
 Dependeciens:
 - python-binance https://python-binance.readthedocs.io/en/latest/overview.html
