@@ -33,5 +33,12 @@ Other Settings:
    -  data_limit          : How many past kline price data intervals to get
     - data_kline_interval : What kline price data interval to use, KLINE_INTERVAL_1MINUTE to 1 KLINE_INTERVAL_1MONTH 
         
+        
+## ml_randomForestV2
+RandomForest classifier that loads 10 000 kline history price data points, builds a prediction dataset using past datapoints to predict price change (-1%, 0 or +1%) in the next n minutes. Then shows prediction for the next 2h if price will increase/decrease by 1% or stay same.  
+
+TODO:
+- [ ] Combine randomForest model prediction to Bollinger band model
+- [ ] Refactor and clean code using classes
 
 
