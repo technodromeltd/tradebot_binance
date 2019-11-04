@@ -35,7 +35,7 @@ import pandas as pd
 
 import datetime
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import time
 
@@ -71,6 +71,7 @@ upper_band_m = 1.02 # Upper bollinger band * this to   to sell
 
 lower_band_m = 0.99 # Lowe bolling band limit to buy
 
+max_single_buy_eth = 1.0
 
 # Read Arguments
 
@@ -222,54 +223,6 @@ def compute_daily_returns(df):
     return df
 
 
-
-def action(type, price):
-
-    global usd
-
-    global shares
-
-    price = float(price)
-
- 
-
-    if (type=='sell'):
-
-
-       
-
-        if (shares>0):
-
-            shares_to_sell= shares
-
-            usd= usd+(shares_to_sell * price)
-
-            shares=shares-shares_to_sell
-
-            
-
-        
-
-    if (type=='buy'):
-
-
-
-        if (usd>0):
-
-            #buy with 
-
-            usd_to_buy = usd
-
-            shares = shares + usd_to_buy / price
-
-            usd = usd - usd_to_buy
-
-           
-
-    print('Coins: ',shares ,' | USD: ',usd)   
-
-
-
 def make_order(type, order_price):
 
     global min_sell_amount
@@ -282,7 +235,7 @@ def make_order(type, order_price):
 
         balance = client.get_asset_balance(asset=coin_b)
 
-        amount  = 2.0 / order_price
+        amount  = max_single_buy_eth / order_price # Buy only with 1eth at once
 
         global balance_coin_b
 
@@ -290,9 +243,9 @@ def make_order(type, order_price):
 
         balance_coin_b = float(balance['free'])
 
-        if balance_coin_b > 2:
+        if balance_coin_b > max_single_buy_eth:
 
-            # Lets order only max of 5eth
+            # Lets order only max of 1eth
 
             # amount = 5.0
 
@@ -454,6 +407,7 @@ starting_price = float(get_latest_price(current_symbol))
 
 
 starting_capital = balance_coin_a*starting_price + balance_coin_b
+starting_capital = 3.05 # REMOVE 
 
 # print "ETH balance: ", balance
 
