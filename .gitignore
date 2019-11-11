@@ -4,3 +4,4 @@ __pycache__/
 data/
 lesson4-tabular.*
 .ipynb_checkpoints/
+test*

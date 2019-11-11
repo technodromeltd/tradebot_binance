@@ -8,7 +8,7 @@ import numpy as np
 from binance.client import Client
 from binance.enums import *
 from binance_api_keys import *
-current_symbol = "MDAETH"
+current_symbol = "LTCETH"
 kline_min = 15
 kline_interval = "15m"
 #UPDATE_DATA = True
