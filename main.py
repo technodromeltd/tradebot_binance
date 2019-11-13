@@ -33,16 +33,8 @@ from colorama import Fore, init
 client = Client(api_key, secret_key)
 starting_time = int(round(time.time()))
 
-#SETTINGS
-data_last_updated = 0
-update_interval = 15  # Seconds. How often to check prices
-data_kline_interval = KLINE_INTERVAL_3MINUTE # kline price data interval
 current_symbol = "LTCETH" # Symbol pair to trade
-data_limit = 20 #
-upper_band_m = 1.02 # Upper bollinger band * this to   to sell
-lower_band_m = 0.99 # Lowe bolling band limit to buy
-max_single_buy_eth = 1.0
-
+update_interval = 15  # Seconds. How often to check prices
 # Read Arguments
 if len(sys.argv) > 1:
     if sys.argv[1]:
@@ -56,34 +48,56 @@ if len(current_symbol) > 6:
     coin_a = current_symbol[:4]    
 else:    
     coin_a = current_symbol[:3]    
-    coin_b = current_symbol[3:]    
-def get_new_data(current_symbol):
-    current_millis = int(round(time.time() * 1000))
-    df=pd.DataFrame()
-    
-    df1 = client.get_klines(symbol=current_symbol, interval=data_kline_interval, endTime=current_millis, limit=data_limit)
-    df1 = pd.DataFrame(df1, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume',' Close time','Quote asset volume','Number of trades','Taker buy base asset volume','Taker buy quote asset volume','Can be ignored'])
-    df1.set_index('Time')
-   
-    df = df.append(df1, ignore_index=True)
-    df["Time"] = pd.to_datetime(df["Time"],unit="ms")
-    # print df[['Time','Close']]
-    # return df[['Time','Close']]
-    data =  df[['Time','Close']]
-    return data
-    # data.to_csv('data/'+current_symbol+'.csv', index=False)
-    
-def get_latest_price(current_symbol):
-    current_millis = int(round(time.time() * 1000))
-    df1 = client.get_klines(symbol=current_symbol, interval=KLINE_INTERVAL_1MINUTE, endTime=current_millis, limit=1)
-    df1 = pd.DataFrame(df1, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume',' Close time','Quote asset volume','Number of trades','Taker buy base asset volume','Taker buy quote asset volume','Can be ignored'])
-    
-    # print(df1['Close'][0])
-    return df1['Close'][0]
+    coin_b = current_symbol[3:]
 
-def get_data(current_symbol):
-    df_temp = pd.read_csv("data/"+current_symbol+".csv", usecols=["Time","Close"])
-    return df_temp
+class TradeBot:
+    """
+    TODO Refactor rest of functions inside class
+    """
+
+    #SETTINGS
+    data_last_updated = 0
+   
+    data_kline_interval = KLINE_INTERVAL_3MINUTE # kline price data interval
+   
+    data_limit = 20 #
+    upper_band_m = 1.02 # Upper bollinger band * this to   to sell
+    lower_band_m = 0.99 # Lowe bolling band limit to buy
+    max_single_buy_eth = 1.0
+
+
+    def __init__(self, current_symbol=None,update_interval=None):
+        self.current_symbol = current_symbol
+        self.update_interval = update_interval
+
+
+
+    def get_new_data(self):
+
+        current_millis = int(round(time.time() * 1000))
+        df=pd.DataFrame()
+        
+        df1 = client.get_klines(symbol=self.current_symbol, interval=self.data_kline_interval, endTime=current_millis, limit=self.data_limit)
+        df1 = pd.DataFrame(df1, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume',' Close time','Quote asset volume','Number of trades','Taker buy base asset volume','Taker buy quote asset volume','Can be ignored'])
+        df1.set_index('Time')
+    
+        df = df.append(df1, ignore_index=True)
+        df["Time"] = pd.to_datetime(df["Time"],unit="ms")
+
+        data =  df[['Time','Close']]
+        return data
+
+    
+    def get_latest_price(self):
+        current_millis = int(round(time.time() * 1000))
+        df1 = client.get_klines(symbol=self.current_symbol, interval=KLINE_INTERVAL_1MINUTE, endTime=current_millis, limit=1)
+        df1 = pd.DataFrame(df1, columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume',' Close time','Quote asset volume','Number of trades','Taker buy base asset volume','Taker buy quote asset volume','Can be ignored'])
+        
+        return df1['Close'][0]
+
+    def get_data(self):
+        df_temp = pd.read_csv("data/"+this.current_symbol+".csv", usecols=["Time","Close"])
+        return df_temp
 
 def get_rolling_mean(values, window):
     """Return rolling mean of given values, using specified window size."""
@@ -99,11 +113,10 @@ def get_bollinger_bands(rm, rstd):
     
 def compute_daily_returns(df):
     """Compute and return the daily return values."""
-    # Note: Returned DataFrame must have the same number of rows
-    
+   
     df = df.pct_change(1)
     df.fillna(0, inplace=True)
-    #print df
+
     return df
 
 def make_order(type, order_price):
@@ -112,12 +125,11 @@ def make_order(type, order_price):
         #Trying to buy
         
         balance = client.get_asset_balance(asset=coin_b)
-        amount  = max_single_buy_eth / order_price # Buy only with 1eth at once
+        amount  = bot.max_single_buy_eth / order_price # Buy only with 1eth at once
         global balance_coin_b
         balance_coin_b = float(balance['free'])
-        if balance_coin_b > max_single_buy_eth:
+        if balance_coin_b > bot.max_single_buy_eth:
             # Lets order only max of 1eth
-            # amount = 5.0
             
             ticks = {}
             for filt in client.get_symbol_info(current_symbol)['filters']:
@@ -142,10 +154,10 @@ def make_order(type, order_price):
             print("Not enough balance to buy, balance updated")
        
     if (type == 'sell'):
-        # print "Min sell amount",min_sell_amount
+
         global balance_coin_a
         balance = client.get_asset_balance(asset=coin_a)
-        # print balance['free']
+
         amount  = float(balance['free'])
         balance_coin_a = float(balance['free']) 
         if balance_coin_a > min_sell_amount:
@@ -155,12 +167,9 @@ def make_order(type, order_price):
                 if filt['filterType'] == 'LOT_SIZE':
                     ticks[coin_a] = filt['stepSize'].find('1')
                     if ticks[coin_a] > 0: ticks[coin_a] = ticks[coin_a] - 1
-                    # print "Lots size:",ticks[coin_a]
-                # if filt['filterType'] == 'PRICE_FILTER':
-                #     priceStep[coin_a] = filt['tickSize'].find('1')
-            # print ticks[coin_b] 
+
             order_quantity = math.floor(amount * 10**ticks[coin_a]) / float(10**ticks[coin_a])
-            # print order_quantity
+
             print("Trying a sell ",order_quantity,"",coin_a, "at price: ", order_price, "",coin_b)
             try:
                 order = client.order_limit_sell(
@@ -168,7 +177,6 @@ def make_order(type, order_price):
                     quantity=order_quantity,
                     price=order_price)
                 balance = client.get_asset_balance(asset=coin_a)
-                # print balance['free']
                
                 balance_coin_a = float(balance['free']) 
             except:
@@ -190,6 +198,7 @@ def clear():
     print ("\x1b[2J")
  
 
+bot = TradeBot(current_symbol=current_symbol,update_interval=update_interval)
 print("Starting tradeBot...")
 print("Current symbol:", coin_a, " - ",coin_b)
 print("Update interval: ", str(update_interval),"s")
@@ -197,7 +206,7 @@ balance_coin_a = client.get_asset_balance(asset=coin_a)
 balance_coin_a = float(balance_coin_a['free'])
 balance_coin_b = client.get_asset_balance(asset=coin_b)
 balance_coin_b = float(balance_coin_b['free'])
-starting_price = float(get_latest_price(current_symbol))
+starting_price = float(bot.get_latest_price())
 starting_capital = balance_coin_a*starting_price + balance_coin_b
 starting_capital = 3.05 # REMOVE 
 
@@ -226,12 +235,13 @@ print("Bot Ready.")
 time.sleep(1)
 clear()
 clear_flag = False
+
 while True:
     
     current_time = int(round(time.time()))-time.timezone
    
     try:
-        df = get_new_data(current_symbol)
+        df = bot.get_new_data()
         
         balance_coin_a = client.get_asset_balance(asset=coin_a)
         balance_coin_a = float(balance_coin_a['free'])
@@ -252,11 +262,11 @@ while True:
     rstd = get_rolling_std(df["Close"], window=20)
     # 3. Compute upper and lower bands
     upper_band, lower_band = get_bollinger_bands(rm, rstd)
-    upper_band = float(upper_band[data_limit-1])
-    lower_band= float(lower_band[data_limit-1])
+    upper_band = float(upper_band[bot.data_limit-1])
+    lower_band= float(lower_band[bot.data_limit-1])
 
     local_time = time.localtime(current_time)
-    # print local_time
+
     current_time_formatted = time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(current_time))
     price = float(df["Close"][19])
 
@@ -291,7 +301,7 @@ while True:
         sell_signal=False
         buy_signal=False
         
-    if sell_signal==True and (price / upper_band) < upper_band_m and balance_coin_a > min_sell_amount:
+    if sell_signal==True and (price / upper_band) < bot.upper_band_m and balance_coin_a > min_sell_amount:
             # Sell balance_coin_a if have
         # print "Selling balance_coin_a"
         if balance_coin_a>min_sell_amount:
@@ -299,7 +309,7 @@ while True:
             sell_price = price*1.0
             make_order('sell',sell_price)
             sell_signal=False
-    if ( price / lower_band) > lower_band_m and buy_signal == True and balance_coin_b > 0.05:
+    if ( price / lower_band) > bot.lower_band_m and buy_signal == True and balance_coin_b > 0.05:
         # Buy balance_coin_a if funds available
         # print "Buying balance_coin_a"
         if balance_coin_b > 0.01:
@@ -334,7 +344,7 @@ while True:
             balance_coin_b = client.get_asset_balance(asset=coin_b)
             balance_coin_b = float(balance_coin_b['free'])
             order_closed = False
-            clear_flag=True
+            clear_flag=True # Clear old orders from screen
             
     
     time.sleep(update_interval)    
